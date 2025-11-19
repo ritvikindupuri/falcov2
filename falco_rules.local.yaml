@@ -1,0 +1,36 @@
+# Custom Falco rules for container security monitoring
+- rule: Suspicious_Shell_Execution
+  desc: Detect execution of common shell binaries
+  condition: >
+    evt.type = execve and 
+    (proc.name = "sh" or proc.name = "bash" or proc.name = "dash")
+  output: >
+    SECURITY ALERT - Suspicious Shell Execution (user=%user.name command=%proc.cmdline container=%container.name)
+  priority: CRITICAL
+  tags: [shell, mitre_execution]
+  source: syscall
+  enabled: true
+
+- rule: Crypto_Mining_Activity
+  desc: Detect potential crypto mining activity (high CPU usage patterns)
+  condition: >
+    (evt.type = execve and 
+    (proc.name in ("minerd", "cpuminer", "xmrig", "xmr-stak", "ccminer", "t-rex") or
+     proc.cmdline contains "miner" or 
+     proc.cmdline contains "mine" or
+     proc.cmdline contains "xmr" or
+     proc.cmdline contains "crypto" or
+     proc.cmdline contains "--donate" or
+     proc.cmdline contains "--url" or
+     proc.cmdline contains "--user" or
+     proc.cmdline contains "--pass" or
+     proc.cmdline contains "--algo" or
+     proc.cmdline contains "--coin" or
+     proc.cmdline contains "pool"))
+  output: >
+    CRYPTO MINING DETECTED (user=%user.name command=%proc.cmdline container=%container.name)
+  priority: CRITICAL
+  tags: [crypto, mining, mitre_execution]
+  source: syscall
+  enabled: true
+

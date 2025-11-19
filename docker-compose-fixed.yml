@@ -1,0 +1,75 @@
+version: '3.6'
+
+services:
+  falco:
+    image: falcosecurity/falco:latest
+    container_name: falco
+    privileged: true
+    restart: unless-stopped
+    environment:
+      - WEBUI_URL=http://falcosidekick-ui:2802
+      - FALCO_BPF_PROBE=""
+      - SYSDIG_SKIP_LOAD=1
+      - FALCO_DRIVER_LOAD_MODE=userspace
+      - HTTP_OUTPUT_ENABLED=true
+      - HTTP_OUTPUT_URL=http://falcosidekick:2801/
+    volumes:
+      - /var/run/docker.sock:/host/var/run/docker.sock
+      - /proc:/host/proc:ro
+      - /boot:/host/boot:ro
+      - /lib/modules:/host/lib/modules:ro
+      - /usr:/host/usr:ro
+      - /etc:/host/etc:ro
+      - ./falco_rules.local.yaml:/etc/falco/falco_rules.local.yaml
+    command: ["/usr/bin/falco", "-o", "time_format_iso_8601=true", "-o", "json_output=true", "-r", "/etc/falco/falco_rules.local.yaml"]
+    depends_on:
+      - falcosidekick
+      - falcosidekick-ui
+
+  falcosidekick:
+    image: falcosecurity/falcosidekick:latest
+    container_name: falcosidekick
+    restart: unless-stopped
+    environment:
+      - WEBUI_URL=http://falcosidekick-ui:2802
+      - WEBUI_USER=admin
+      - WEBUI_PASSWORD=admin
+      # Email Configuration
+      - SMTPHOST=smtp.gmail.com
+      - SMTPPORT=587
+      - EMAIL_FROM=ritvik.indupuri@gmail.com
+      - EMAIL_FROMPASSWORD=jtgd aczb gqhs aouy
+      - EMAIL_TO=ritvik.indupuri@gmail.com
+      - EMAIL_OUTPUT_FORMAT=text
+      - EMAIL_TEMPLATE=SECURITY ALERT: [FALCO] %s
+      - DEBUG=true
+    ports:
+      - "2801:2801"
+    depends_on:
+      - falcosidekick-ui
+
+  falcosidekick-ui:
+    image: falcosecurity/falcosidekick-ui:latest
+    container_name: falcosidekick-ui
+    restart: unless-stopped
+    environment:
+      - FALCOSIDEKICK_UI_LISTENING_PORT=2802
+      - FALCOSIDEKICK_UI_DEBUG=true
+      - FALCOSIDEKICK_UI_REDIS_URL=redis:6379
+    ports:
+      - "2802:2802"
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    restart: unless-stopped
+    command: redis-server --requirepass falco
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+
+volumes:
+  redis_data:

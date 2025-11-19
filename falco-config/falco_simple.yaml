@@ -1,0 +1,24 @@
+# Minimal Falco configuration
+
+# Output configuration
+json_output: true
+json_include_output_property: true
+json_include_tags_property: true
+
+# Program output to Falcosidekick
+program_output:
+  enabled: true
+  keep_alive: true
+  program: "curl -d @- falcosidekick:2801"
+
+# Web server configuration
+webserver:
+  enabled: true
+  listen_port: 8765
+  k8s_healthz_endpoint: /healthz
+  ssl_enabled: false
+
+# Logging configuration
+log_level: info
+log_stderr: true
+log_syslog: false

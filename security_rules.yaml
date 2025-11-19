@@ -1,0 +1,98 @@
+# Security Rules Configuration
+# Severity levels: critical, high, medium, low, info
+
+rules:
+  # Core detection rules
+  - name: container_escape_attempt
+    description: "Container escape attempt detected"
+    patterns:
+      - "chroot"
+      - "nsenter"
+      - "docker.sock"
+      - "/proc/self/"
+    severity: critical
+    confidence: 0.9
+    
+  - name: suspicious_process_execution
+    description: "Unexpected or suspicious process execution"
+    patterns:
+      - "/bin/sh -c"
+      - "wget"
+      - "curl"
+      - "nc "
+      - "ncat"
+      - "socat"
+    severity: high
+    confidence: 0.8
+
+  - name: sensitive_file_access
+    description: "Access to sensitive system files"
+    patterns:
+      - "/etc/shadow"
+      - "/etc/passwd"
+      - "/root/"
+      - "/.ssh/"
+    severity: critical
+    confidence: 0.95
+
+  - name: crypto_mining
+    description: "Cryptocurrency mining activity"
+    patterns:
+      - "xmrig"
+      - "xmr-stak"
+      - "cpuminer"
+      - "crypto"
+    severity: high
+    confidence: 0.85
+
+# Whitelist - known safe patterns/containers/IPs
+whitelist:
+  containers:
+    - name: "nginx"
+      image: "nginx:.*"
+    - name: "postgres"
+      image: "postgres:.*"
+
+  # Whitelist internal IP ranges
+  ip_ranges:
+    - "10.0.0.0/8"
+    - "192.168.0.0/16"
+    - "172.16.0.0/12"
+
+# Thresholds for alerting
+alert_thresholds:
+  high_confidence: 0.8
+  medium_confidence: 0.6
+  low_confidence: 0.4
+
+# Response actions
+auto_mitigation:
+  critical:
+    - "isolate_container"
+    - "alert_security_team"
+  high:
+    - "alert_security_team"
+    - "log_incident"
+  medium:
+    - "log_incident"
+  low:
+    - "log_incident"
+
+# Model training settings
+model_settings:
+  retrain_interval_hours: 24
+  min_samples_for_training: 100
+  max_samples_per_class: 10000
+
+# Notification settings
+notifications:
+  email_recipients:
+    - "ritvik.indupuri@gmail.com"
+  alert_threshold: "medium"
+  daily_summary: true
+
+# Logging configuration
+logging:
+  level: "INFO"
+  max_size_mb: 100
+  backup_count: 5
